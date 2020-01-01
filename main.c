@@ -148,16 +148,16 @@ void parsecommand(const char *command, const char *arg)
 		printf(
 			"Sections in square brackets [] are optional\n"
 			"Arguments in angle brackets <> are required\n"
-			"a[dd]\t\t<SAMPLE PATH>\tAdd a new track\n"
-			"r[emove]\t\t\tRemove the selected track\n"
-			"s[elect]\t<TRACK NUM>\tChange the selected track\n"
-			"t[oggle]\t<NOTE NUM>\tToggle a note in the selected track\n"
-			"l[ength]\t<BEATS>\t\tSet the length of a track in a number of beats\n"
-			"d[ivisions]\t<DIVISIONS>\tSet the number of notes per beat\n"
-			"p[rint]\t\t\t\tShow all the tracks\n"
-			"h[elp]\t\t\t\tShow this help message\n"
-			"about\t\t\t\tAbout this program\n"
-			"q[uit]\t\t\t\tExit the program\n"
+			"a[dd]       <SAMPLE PATH> Add a new track\n"
+			"r[emove]                  Remove the selected track\n"
+			"s[elect]    <TRACK NUM>   Change the selected track\n"
+			"t[oggle]    <NOTE NUM>    Toggle a note in the selected track\n"
+			"l[ength]    <BEATS>       Set the length of a track in a number of beats\n"
+			"d[ivisions] <DIVISIONS>   Set the number of notes per beat\n"
+			"p[rint]                   Show all the tracks\n"
+			"h[elp]                    Show this help message\n"
+			"about                     About this program\n"
+			"q[uit]                    Exit the program\n"
 		);
 	}
 	else if (strcmp(command, "about") == 0)
