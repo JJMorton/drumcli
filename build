@@ -1,0 +1,4 @@
+#!/bin/sh
+
+gcc $(pkg-config --cflags --libs sdl2 SDL2_mixer) -lm -Wall -g main.c list.c sample.c track.c -o out
+
