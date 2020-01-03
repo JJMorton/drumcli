@@ -76,20 +76,34 @@ void track_togglenote(Track *track, int index, int divisions)
 
 }
 
-void track_print(Track *track)
+void track_print(Track *track, int divisions)
 {
 	Node *current = track->notes;
-	printf("[ ");
+	int numnotes = track->beatcount * divisions;
+	char output[numnotes + 1];
+	memset(output, '-', numnotes);
+	output[numnotes] = '\0';
+
+	int hiddencount = 0;
+
 	while (current != NULL)
 	{
 		Note *note = (Note *) current->data;
 		if (note != NULL)
 		{
-			printf("%g ", note->position);
+			float noteindex = note->position * divisions;
+			if (floorf(noteindex) == noteindex && noteindex < numnotes)
+				output[(int) noteindex] = '#';
+			else
+				hiddencount++;
 		}
 		current = current->next;
 	}
-	printf("]\n");
+
+	if (hiddencount > 0)
+		printf("[ %s ] (%i not shown)\n", output, hiddencount);
+	else
+		printf("[ %s ]\n", output);
 }
 
 bool track_shouldplay(Track *track, float beatindex)

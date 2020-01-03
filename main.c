@@ -1,7 +1,6 @@
 /*
  * TODO:
  *  - Make track_shouldplay more robust (e.g. messes up when changing track length)
- *  - Pretty print
  */
 
 #include <stdio.h>
@@ -70,7 +69,7 @@ int main(void)
 	tracksmutex = SDL_CreateMutex();
 	SDL_Thread *thread = SDL_CreateThread(audioThread, "audio", NULL);
 
-	const size_t buffersize = 32;
+	const size_t buffersize = 128;
 	char buffer[buffersize];
 	char command[buffersize];
 	char arg[buffersize];
@@ -127,12 +126,27 @@ void printabout(void)
 		"   \\ \\_______\\ \\__\\\\ _\\\\ \\_______\\ \\__\\    \\ \\__\\ \\_______\\ \\_______\\ \\__\\\n"
 		"    \\|_______|\\|__|\\|__|\\|_______|\\|__|     \\|__|\\|_______|\\|_______|\\|__|\n"
 		"\n"
-	);
-	printf(
 		"drumcli - by JJMorton\n"
 		"Make drum beats at the command line!\n"
 		"GitHub: https://github.com/JJMorton)\n"
-		"Email: jjmorton1636@gmail.com\n"
+	);
+}
+
+void printhelp(void)
+{
+	printf(
+		"Sections in square brackets [] are optional\n"
+		"Arguments in angle brackets <> are required\n"
+		"a[dd]       <SAMPLE PATH> Add a new track\n"
+		"r[emove]                  Remove the selected track\n"
+		"s[elect]    <TRACK NUM>   Change the selected track\n"
+		"t[oggle]    <NOTE NUM>    Toggle a note in the selected track\n"
+		"l[ength]    <BEATS>       Set the length of a track in a number of beats\n"
+		"d[ivisions] <DIVISIONS>   Set the number of notes per beat\n"
+		"p[rint]                   Show all the tracks\n"
+		"help                      Show this help message\n"
+		"about                     About this program\n"
+		"q[uit]                    Exit the program\n"
 	);
 }
 
@@ -143,22 +157,9 @@ void parsecommand(const char *command, const char *arg)
 		returntomenu = false;
 		printf("Exiting...\n");
 	}
-	else if (strcmp(command, "help") == 0 || strcmp(command, "h") == 0)
+	else if (strcmp(command, "help") == 0)
 	{
-		printf(
-			"Sections in square brackets [] are optional\n"
-			"Arguments in angle brackets <> are required\n"
-			"a[dd]       <SAMPLE PATH> Add a new track\n"
-			"r[emove]                  Remove the selected track\n"
-			"s[elect]    <TRACK NUM>   Change the selected track\n"
-			"t[oggle]    <NOTE NUM>    Toggle a note in the selected track\n"
-			"l[ength]    <BEATS>       Set the length of a track in a number of beats\n"
-			"d[ivisions] <DIVISIONS>   Set the number of notes per beat\n"
-			"p[rint]                   Show all the tracks\n"
-			"h[elp]                    Show this help message\n"
-			"about                     About this program\n"
-			"q[uit]                    Exit the program\n"
-		);
+		printhelp();
 	}
 	else if (strcmp(command, "about") == 0)
 	{
@@ -206,7 +207,7 @@ void parsecommand(const char *command, const char *arg)
 			if (tracks[i] != NULL)
 			{
 				printf("%c %i ", (selectedtrack == i ? '*' : ' '), i);
-				track_print(tracks[i]);
+				track_print(tracks[i], beatdivisions);
 			}
 		}
 	}

@@ -41,7 +41,7 @@ Track *track_create(const char *samplepath, int beatcount);
  * bpm: beats per minute
  */
 void track_togglenote(Track *track, int index, int divisions);
-void track_print(Track *track);
+void track_print(Track *track, int divisions);
 bool track_shouldplay(Track *track, float beatindex);
 void track_play(Track *track, float beatindex);
 void track_free(Track *track);
