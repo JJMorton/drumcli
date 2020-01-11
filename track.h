@@ -19,7 +19,6 @@ typedef enum
 typedef struct
 {
 	float position;
-	int loopplayed;
 } Note;
 
 typedef struct
@@ -28,7 +27,11 @@ typedef struct
 
 	// Times of notes, starting at zero for the first beat
 	Node *notes;
-	Node *lastplayed;
+	// If nexttoplay == NULL, this indicates that the end of the loop was reached and
+	// that we are waiting for it to start again, at which point nexttoplay will
+	// be set to the first note in track_shouldplay
+	Node *nexttoplay;
+	float lastbeatindex;
 
 	// Total number of beats in each loop
 	int beatcount;
@@ -40,8 +43,11 @@ Track *track_create(const char *samplepath, int beatcount);
  * divisions: the number of notes per beat (e.g. quarter-notes would be 4)
  * bpm: beats per minute
  */
-void track_togglenote(Track *track, int index, int divisions);
+void track_addnote(Track *track, float beatindex);
+void track_removenote(Track *track, float beatindex);
+void track_togglenote(Track *track, float beatindex);
 void track_print(Track *track, int divisions);
+void track_setlength(Track *track, int beatcount);
 bool track_shouldplay(Track *track, float beatindex);
 void track_play(Track *track, float beatindex);
 void track_free(Track *track);

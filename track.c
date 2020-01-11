@@ -20,51 +20,89 @@ Track *track_create(const char *samplepath, int beatcount)
 	}
 
 	track->notes = NULL;
-	track->lastplayed = NULL;
+	track->nexttoplay = NULL;
+	track->lastbeatindex = 0;
 	track->beatcount = beatcount;
 
 	return track;
 }
 
-/*
- * index: the note to play
- * divisions: the number of notes per beat (e.g. quarter-notes would be 4)
- * bpm: beats per minute
- */
-void track_togglenote(Track *track, int index, int divisions)
+void track_addnote(Track *track, float beatindex)
 {
-	// Calculate time that note should be played at
-	float position = index * 1.0 / divisions;
-
 	Note *newnote = malloc(sizeof(Note));
 	if (newnote == NULL)
 	{
 		printf("Failed to allocate memory for note\n");
 		return;
 	}
-	newnote->position = position;
-	newnote->loopplayed = -1;
+	newnote->position = beatindex;
 
 	Node *current = track->notes;
 	while (current != NULL)
 	{
 		Note *note = (Note *) current->data;
 
-		if (note->position == position)
-		{
-			// The exact note was found, remove it
-			// Need to make sure that track->lastplayed still references a valid note
-			if (track->lastplayed == current)
-				track->lastplayed = current->previous;
-			track->notes = list_remove(current);
-			free(newnote);
-			return;
-		}
-		
-		if (note->position > position)
+		if (note->position > beatindex)
 		{
 			// We've found the point where the new note should be inserted
 			track->notes = list_createbefore(newnote, current);
+			if (track->nexttoplay == NULL) track->nexttoplay = track->notes;
+			return;
+		}
+
+		current = current->next;
+	}
+
+	// If we reached the end of the list without finding the insertion
+	// point, the new note should be appended to the end
+	track->notes = list_createafter(newnote, list_getlast(track->notes));
+	if (track->nexttoplay == NULL) track->nexttoplay = track->notes;
+}
+
+void track_removenote(Track *track, float beatindex)
+{
+	Node *current = track->notes;
+	while (current != NULL)
+	{
+		Note *note = (Note *) current->data;
+
+		if (note->position == beatindex)
+		{
+			// The note was found, remove it
+			// Need to make sure that track->nexttoplay still references a valid note
+			if (track->nexttoplay == current)
+				track->nexttoplay = track->nexttoplay->next;
+			track->notes = list_remove(current);
+			return;
+		}
+
+		current = current->next;
+	}
+}
+
+void track_togglenote(Track *track, float beatindex)
+{
+	// This function is O(n^2) but it doesn't matter because there are never going
+	// to be so many notes that it will take a considerable amount of time.
+	// Writing separate functions for adding and removing notes gives clearer
+	// code which is a worthy sacrifice in this case.
+
+	Node *current = track->notes;
+	while (current != NULL)
+	{
+		Note *note = (Note *) current->data;
+
+		if (note->position == beatindex)
+		{
+			// The exact note was found, remove it
+			track_removenote(track, beatindex);
+			return;
+		}
+		
+		if (note->position > beatindex)
+		{
+			// We've found the point where the new note should be inserted
+			track_addnote(track, beatindex);
 			return;
 		}
 
@@ -72,8 +110,23 @@ void track_togglenote(Track *track, int index, int divisions)
 	}
 
 	// If we reached the end of the list, the new note should be appended to the end
-	track->notes = list_createafter(newnote, list_getlast(track->notes));
+	track_addnote(track, beatindex);
+}
 
+void track_setlength(Track *track, int beatcount)
+{
+	// Sets the length of the track and removes notes outside of the new range
+	track->beatcount = beatcount;
+	Node *current = track->notes;
+	while (current != NULL)
+	{
+		Note *n = (Note *) current->data;
+		current = current->next;
+		if (n->position >= beatcount)
+		{
+			track_removenote(track, n->position);
+		}
+	}
 }
 
 void track_print(Track *track, int divisions)
@@ -106,39 +159,32 @@ void track_print(Track *track, int divisions)
 		printf("[ %s ]\n", output);
 }
 
-bool track_shouldplay(Track *track, float beatindex)
+bool track_shouldplay(Track *track, float beat)
 {
+	// If there are no notes in the tracks, obviously it shouldn't play
 	if (track->notes == NULL) return false;
 
-	if (track->lastplayed == NULL)
+	float beatindex = fmodf(beat, track->beatcount);
+
+	// If the loop has finished playing, wait until we begin the loop again
+	float lastbeatindex = track->lastbeatindex;
+	track->lastbeatindex = beatindex;
+	if (track->nexttoplay == NULL)
 	{
-		track->lastplayed = list_getlast(track->notes);
+		if (beatindex < lastbeatindex)
+			track->nexttoplay = track->notes;
+		else
+			return false;
 	}
 
-	Note *nextnote;
-	if (track->lastplayed->next == NULL)
-	{
-		nextnote = (Note *) track->notes->data;
-	}
-	else
-	{
-		nextnote = (Note *) track->lastplayed->next->data;
-	}
-
-	return beatindex >= nextnote->position + track->beatcount * (nextnote->loopplayed + 1);
+	Note *note = (Note *) track->nexttoplay->data;
+	return beatindex >= note->position;
 }
 
 void track_play(Track *track, float beatindex)
 {
-	int loopno = floorf(beatindex / (float) track->beatcount);
 	sample_play(track->sample);
-	track->lastplayed = track->lastplayed->next;
-	if (track->lastplayed == NULL)
-	{
-		track->lastplayed = track->notes;
-	}
-	Note *note = (Note *) track->lastplayed->data;
-	note->loopplayed = loopno;
+	track->nexttoplay = track->nexttoplay->next;
 }
 
 void track_free(Track *track)

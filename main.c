@@ -12,7 +12,7 @@
 #include "sample.h"
 #include "track.h"
 
-#define FREQUENCY 44100
+#define FREQUENCY 48000
 #define CHANNELS 2
 #define CHUNKSIZE 512
 
@@ -128,7 +128,7 @@ void printabout(void)
 		"\n"
 		"drumcli - by JJMorton\n"
 		"Make drum beats at the command line!\n"
-		"GitHub: https://github.com/JJMorton)\n"
+		"GitHub: https://github.com/JJMorton\n"
 	);
 }
 
@@ -241,13 +241,14 @@ void parsecommand(const char *command, const char *arg)
 			return;
 		}
 		int note = atoi(arg);
-		if (note < 0 || note / beatdivisions >= tracks[selectedtrack]->beatcount)
+		float beatindex = (float) note / beatdivisions;
+		if (beatindex < 0 || beatindex >= tracks[selectedtrack]->beatcount)
 		{
 			printf("Invalid note index\n");
 			return;
 		}
-		track_togglenote(tracks[selectedtrack], note, beatdivisions);
-		printf("Toggled note %i (beat %g) in track %i\n", note, (float) note / beatdivisions, selectedtrack);
+		track_togglenote(tracks[selectedtrack], beatindex);
+		printf("Toggled note %i (beat %g) in track %i\n", note, beatindex, selectedtrack);
 	}
 	else if (strcmp(command, "length") == 0 || strcmp(command, "l") == 0)
 	{
@@ -261,14 +262,14 @@ void parsecommand(const char *command, const char *arg)
 			printf("Select a track first\n");
 			return;
 		}
-		int beats = atoi(arg);
-		if (beats < 1)
+		int beatcount = atoi(arg);
+		if (beatcount < 1)
 		{
 			printf("Invalid number of beats\n");
 			return;
 		}
-		tracks[selectedtrack]->beatcount = beats;
-		printf("Set the length of track %i to %i beats\n", selectedtrack, beats);
+		track_setlength(tracks[selectedtrack], beatcount);
+		printf("Set the length of track %i to %i beats\n", selectedtrack, beatcount);
 	}
 	else if (strcmp(command, "divisions") == 0 || strcmp(command, "d") == 0)
 	{
